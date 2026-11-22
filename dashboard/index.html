@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Radar — the 40, ranked</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg class="radar-mark" viewBox="0 0 48 48" aria-hidden="true">
+      <circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="24" cy="24" r="13" fill="none" stroke="currentColor" stroke-width="1" opacity=".55"/>
+      <circle cx="24" cy="24" r="5" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <line x1="24" y1="24" x2="40" y2="10" stroke="currentColor" stroke-width="2"/>
+      <circle cx="24" cy="24" r="2.5" fill="currentColor"/>
+      <circle cx="33" cy="30" r="2" fill="currentColor"/>
+    </svg>
+    <div>
+      <h1>TOKEN RADAR</h1>
+      <p class="tag">Every pre-token protocol in the snapshot, ranked by implied launch value.</p>
+    </div>
+  </div>
+  <p class="meta">Snapshot 14 Nov 2026 &middot; 758 protocols &middot; floor $50M TVL &middot; 40 on the watchlist &middot; no token yet</p>
+</header>
+
+<section class="stats" id="stats" aria-label="Headline numbers"></section>
+
+<section class="panel chart-panel">
+  <h2>Top 10 by implied launch value</h2>
+  <p class="hint">Implied value = TVL &times; the category&rsquo;s comparable multiple &times; growth factor &times; maturity. See the Model tab.</p>
+  <div id="chart" class="chart"></div>
+</section>
+
+<nav class="tabs" role="tablist">
+  <button class="tab active" data-tab="board" role="tab" aria-selected="true">Pre-token board</button>
+  <button class="tab" data-tab="live" role="tab" aria-selected="false">Live tokens</button>
+  <button class="tab" data-tab="model" role="tab" aria-selected="false">Model</button>
+</nav>
+
+<section id="tab-board" class="tabpage">
+  <div class="controls">
+    <label>Search <input id="q" type="search" placeholder="name or slug" autocomplete="off"></label>
+    <label>Category <select id="category"><option value="">All categories</option></select></label>
+    <label>Chain <select id="chain"><option value="">All chains</option></select></label>
+    <label>Min TVL <select id="minTvl">
+      <option value="0">Any</option><option value="50000000">$50M</option>
+      <option value="100000000">$100M</option><option value="250000000">$250M</option>
+      <option value="1000000000">$1B</option></select></label>
+    <label class="check"><input id="watchOnly" type="checkbox"> Watchlist only</label>
+    <label>Sort <select id="sort">
+      <option value="rank">Rank</option><option value="implied">Implied value</option>
+      <option value="tvl">TVL</option><option value="growth">7-day change</option>
+      <option value="age">Age</option><option value="name">Name</option></select></label>
+  </div>
+  <p class="count" id="count"></p>
+  <div class="table-wrap">
+    <table id="board">
+      <thead><tr>
+        <th class="num">#</th><th>Protocol</th><th>Category</th><th>Chains</th>
+        <th class="num">TVL</th><th class="num">7d</th><th class="num">Age</th>
+        <th class="num">Implied launch value</th><th></th>
+      </tr></thead>
+      <tbody id="boardBody"></tbody>
+    </table>
+  </div>
+  <p class="hint">Click a row for the detail view: model breakdown and the farm plan.</p>
+</section>
+
+<section id="tab-live" class="tabpage hidden">
+  <p class="lede">Protocols whose token already trades. They are <strong>not</strong> on the ranked board — they are the comparables the model is priced from, shown here with their market caps.</p>
+  <div class="table-wrap">
+    <table id="liveTable">
+      <thead><tr>
+        <th class="num">#</th><th>Protocol</th><th>Category</th>
+        <th class="num">TVL</th><th class="num">Market cap</th><th class="num">Mcap / TVL</th><th class="num">7d</th>
+      </tr></thead>
+      <tbody id="liveBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="tab-model" class="tabpage hidden">
+  <div class="model-grid">
+    <div class="panel">
+      <h2>How the implied value is priced</h2>
+      <p>There is no fixed multiple and no list of favourite names. The price comes from the snapshot itself:</p>
+      <ol class="formula">
+        <li><strong>Comparable multiple.</strong> For each category, the median market-cap / TVL ratio of that category&rsquo;s live-token protocols (at least 3 of them, otherwise the global median of 0.21). Clamped to 0.05&ndash;1.50.</li>
+        <li><strong>Base.</strong> TVL &times; multiple.</li>
+        <li><strong>Growth.</strong> 7-day TVL change, clamped to &minus;60%…+120%, times a 0.5 weight: factor = 1 + growth &times; 0.5.</li>
+        <li><strong>Maturity.</strong> 0.6 + min(age, 3 years) / 3 years &times; 0.4. A protocol that has run tokenless for years has earned more of its value; one listed last month starts at 60%.</li>
+        <li><strong>Implied value</strong> = base &times; growth factor &times; maturity, rounded to the dollar, at least $1.</li>
+      </ol>
+      <p>Pre-token and live-token protocols are never mixed: the board ranks only protocols with no token, no market cap and no Gecko listing. CEXs and versioned clones are excluded. The watchlist — all 40 protocols at or above the $50M floor with no token — is the floor of the board, never its ceiling: the board ranks 289 protocols.</p>
+    </div>
+    <div class="panel">
+      <h2>Try your own constants</h2>
+      <p class="hint">Change a constant and the board re-ranks live in your browser. The ranked board and the screenshots use the defaults above.</p>
+      <label class="sandbox">Growth weight <input id="sbGrowth" type="number" min="0" max="1" step="0.1" value="0.5"> <span>0–1</span></label>
+      <label class="sandbox">Maturity floor <input id="sbFloor" type="number" min="0.4" max="0.8" step="0.05" value="0.6"> <span>0.4–0.8</span></label>
+      <label class="sandbox">Multiple cap <input id="sbCap" type="number" min="0.5" max="3" step="0.1" value="1.5"> <span>0.5–3</span></label>
+      <div class="sandbox-actions">
+        <button id="sbApply" type="button">Re-rank with these</button>
+        <button id="sbReset" type="button" class="ghost">Reset to defaults</button>
+      </div>
+      <p class="count" id="sbNote"></p>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Comparable multiples by category</h2>
+    <p class="hint">Median mcap / TVL of live-token protocols in the category, with the sample size. Categories with fewer than 3 live protocols fall back to the global median.</p>
+    <div class="table-wrap"><table id="multTable">
+      <thead><tr><th>Category</th><th class="num">Multiple</th><th class="num">Live protocols</th><th>Source</th></tr></thead>
+      <tbody id="multBody"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<aside id="drawer" class="drawer hidden" aria-label="Protocol detail">
+  <button id="drawerClose" type="button" class="drawer-close" aria-label="Close">&times;</button>
+  <div id="drawerBody"></div>
+</aside>
+
+<footer>
+  <p>Data: sealed DefiLlama snapshot, 14 Nov 2026. Implied launch values are a model built from that snapshot — a way to rank the watchlist, not a prediction and not financial advice. Farm plans assume you farm with money you can afford to lose.</p>
+</footer>
+
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
